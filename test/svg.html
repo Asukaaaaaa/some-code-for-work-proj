@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Progress Bar</title>
+    <style>
+        canvas {
+            width: 50vw;
+            height: 50vw;
+            display: block;
+            margin: 0 auto;
+        }
+        input {
+            display: block;
+            width: 300px;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="progressCanvas" width="300" height="300"></canvas>
+<input type="range" id="progressRange" min="0" max="100" value="0">
+
+<script>
+    const canvas = document.getElementById('progressCanvas');
+    const ctx = canvas.getContext('2d');
+    const rangeInput = document.getElementById('progressRange');
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // 绘制直角折线"2"形轨道的路径
+    const path = [
+        { x: 50, y: 50 }, 
+        { x: 250, y: 50 }, 
+        { x: 250, y: 150 }, 
+        { x: 50, y: 150 }, 
+        { x: 50, y: 250 }, 
+        { x: 250, y: 250 }
+    ];
+
+    const totalLength = calculatePathLength(path);
+
+    // 绘制轨道的函数
+    function drawTrack() {
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight); // 清除画布
+        ctx.lineWidth = 12;
+        ctx.strokeStyle = 'blue';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+
+        for (let i = 1; i < path.length; i++) {
+            ctx.lineTo(path[i].x, path[i].y);
+        }
+        ctx.stroke();
+    }
+
+    // 绘制滑块的函数
+    function drawProgress(progress) {
+        const progressLength = totalLength * (progress / 100); // 根据进度计算滑块长度
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = 'yellow';
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        
+        let lengthCovered = 0;
+        
+        for (let i = 1; i < path.length; i++) {
+            const segmentLength = distance(path[i - 1], path[i]);
+
+            if (lengthCovered + segmentLength > progressLength) {
+                const remainingLength = progressLength - lengthCovered;
+                const ratio = remainingLength / segmentLength;
+                const x = path[i - 1].x + ratio * (path[i].x - path[i - 1].x);
+                const y = path[i - 1].y + ratio * (path[i].y - path[i - 1].y);
+                ctx.lineTo(x, y);
+                break;
+            } else {
+                ctx.lineTo(path[i].x, path[i].y);
+                lengthCovered += segmentLength;
+            }
+        }
+        ctx.stroke();
+    }
+
+    // 计算路径总长度
+    function calculatePathLength(path) {
+        let length = 0;
+        for (let i = 1; i < path.length; i++) {
+            length += distance(path[i - 1], path[i]);
+        }
+        return length;
+    }
+
+    // 计算两点之间的距离
+    function distance(point1, point2) {
+        return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+    }
+
+    // 更新进度条
+    function updateProgress(value) {
+        drawTrack(); // 重新绘制轨道
+        drawProgress(value); // 绘制新的滑块
+    }
+
+    // 监听滑块变化
+    rangeInput.addEventListener('input', (e) => {
+        updateProgress(e.target.value);
+    });
+
+    // 初始绘制
+    drawTrack();
+    drawProgress(0);
+</script>
+
+</body>
+</html>
